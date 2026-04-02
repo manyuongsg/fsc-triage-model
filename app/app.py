@@ -171,9 +171,9 @@ arts = load_arts()
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_base():
-    cands = list(Path(".").glob("*v3*.csv")) + list(Path(".").glob("final_refined*.csv"))
+    cands = list(Path("../data").glob("*v3*.csv")) + list(Path("../data").glob("final_refined*.csv"))
     if not cands:
-        st.error("Cannot find the v3 dataset CSV. Place it in the same folder as app.py.")
+        st.error("Cannot find the v3 dataset CSV. Place it in the data folder.")
         st.stop()
     df = pd.read_csv(str(sorted(cands)[-1]), low_memory=False)
     df.loc[df["Victim_Category"]=="Non-Elderly VA","Age_Group"] = "18-64 years"
