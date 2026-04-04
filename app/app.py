@@ -29,6 +29,14 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
+# This gets the exact folder where app.py lives (the 'app' folder)
+APP_DIR = Path(__file__).parent
+# This goes up one level to the root of your repository
+ROOT_DIR = APP_DIR.parent 
+# Define exactly where your models and data live relative to the root
+MODEL_DIR = ROOT_DIR / "models" # <-- Change "models" if your folder is named differently
+DATA_DIR = ROOT_DIR / "data"
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
@@ -145,22 +153,29 @@ SINGAPORE_ESTATES = [
 def load_arts():
     required = ["msf_cluster_model.pkl","scaler_cluster.pkl","model_meta.pkl",
                 "scaler.pkl","label_encoders.pkl"]
+    
+    # Check if files exist inside the MODEL_DIR
     for f in required:
-        if not Path(f).exists():
-            st.error(f"Missing: {f}  →  Run the notebook first, then place all .pkl files next to app.py")
+        file_path = MODEL_DIR / f
+        if not file_path.exists():
+            st.error(f"Missing: {file_path}  →  Please check your GitHub folder structure.")
             st.stop()
-    hrf_cands = sorted(Path(".").glob("msf_hrf_model_*.pkl"))
-    iin_cands = sorted(Path(".").glob("msf_iin_model_*.pkl"))
-    if not hrf_cands: st.error("Missing msf_hrf_model_*.pkl"); st.stop()
-    if not iin_cands: st.error("Missing msf_iin_model_*.pkl"); st.stop()
+            
+    # Search for the HRF and IIN models inside the MODEL_DIR
+    hrf_cands = sorted(MODEL_DIR.glob("msf_hrf_model_*.pkl"))
+    iin_cands = sorted(MODEL_DIR.glob("msf_iin_model_*.pkl"))
+    
+    if not hrf_cands: st.error(f"Missing msf_hrf_model_*.pkl in {MODEL_DIR}"); st.stop()
+    if not iin_cands: st.error(f"Missing msf_iin_model_*.pkl in {MODEL_DIR}"); st.stop()
+    
     return {
-        "hrf":     joblib.load(str(hrf_cands[0])),
-        "iin":     joblib.load(str(iin_cands[0])),
-        "km":      joblib.load("msf_cluster_model.pkl"),
-        "sc_cl":   joblib.load("scaler_cluster.pkl"),
-        "sc_mod":  joblib.load("scaler.pkl"),
-        "meta":    joblib.load("model_meta.pkl"),
-        "le":      joblib.load("label_encoders.pkl"),
+        "hrf":     joblib.load(hrf_cands[0]),
+        "iin":     joblib.load(iin_cands[0]),
+        "km":      joblib.load(MODEL_DIR / "msf_cluster_model.pkl"),
+        "sc_cl":   joblib.load(MODEL_DIR / "scaler_cluster.pkl"),
+        "sc_mod":  joblib.load(MODEL_DIR / "scaler.pkl"),
+        "meta":    joblib.load(MODEL_DIR / "model_meta.pkl"),
+        "le":      joblib.load(MODEL_DIR / "label_encoders.pkl"),
     }
 
 arts = load_arts()
@@ -171,11 +186,13 @@ arts = load_arts()
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_base():
-    cands = list(Path("../data").glob("*v3*.csv")) + list(Path("../data").glob("final_refined*.csv"))
+    # Use DATA_DIR instead of hardcoded "../data"
+    cands = list(DATA_DIR.glob("*v3*.csv")) + list(DATA_DIR.glob("final_refined*.csv"))
     if not cands:
-        st.error("Cannot find the v3 dataset CSV. Place it in the data folder.")
+        st.error(f"Cannot find the dataset CSV. Looked in: {DATA_DIR}")
         st.stop()
-    df = pd.read_csv(str(sorted(cands)[-1]), low_memory=False)
+        
+    df = pd.read_csv(sorted(cands)[-1], low_memory=False)
     df.loc[df["Victim_Category"]=="Non-Elderly VA","Age_Group"] = "18-64 years"
 
     # Re-derive engineered features from raw columns
