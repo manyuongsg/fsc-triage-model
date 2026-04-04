@@ -4,3 +4,8 @@ scikit-learn
 joblib
 numpy
 plotly
+imbalanced-learn
+xgboost
+lightgbm
+catboost
+category_encoders
