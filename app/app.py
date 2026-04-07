@@ -81,62 +81,178 @@ div[data-testid="stTabs"] button[data-baseweb="tab"]{font-size:15px;font-weight:
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
 CLUSTER_CFG = {
-    0: dict(name="Silent Pressure Cooker", emoji="🫧",  color="#f59e0b", css="c0",
-            badge="b-green",  badge_txt="Preventive",
-            profile="No financial stress, Spouse + VA victims, latent risk. Families are not reaching services despite underlying vulnerability.",
-            signal="Low ecological risk. Danger is hidden — under-reporting is common.",
-            who="Community Development Councils, RCs, FSC outreach workers",
-            urgency="Preventive — act within 2–4 weeks",
-            interventions=[
-                ("Grassroots outreach",   "Engage through CCs and RCs to build trust before crisis escalates",              "b-blue"),
-                ("Financial screening",   "Link to ComCare, Workfare, utility assistance",                                  "b-green"),
-                ("VA welfare checks",     "Schedule routine home visits for elderly/disabled household members",             "b-amber"),
-                ("PPO awareness",         "Ensure female spouses know their legal rights under the Women's Charter",         "b-purple"),
-            ]),
-    1: dict(name="Ecological Hotspot Child", emoji="🏘️", color="#ef4444", css="c1",
-            badge="b-red",    badge_txt="High Alert",
-            profile="100% financial stress, zero prior contact, all child victims, high community incidence. Risk is environmental — these families are undetected.",
-            signal="63% high-risk. First contact is the critical intervention window.",
-            who="School counsellors, Allied Educators, MOE-FSC liaisons, KidSTART",
-            urgency="High alert — triage within 48 hours",
-            interventions=[
-                ("School monitoring",      "Equip AEDs and counsellors to detect unexplained injuries and absenteeism",     "b-red"),
-                ("Childcare alerts",       "Train childcare centre staff on physical abuse indicators for 0-6 year olds",    "b-red"),
-                ("Estate campaign",        "Parenting workshops and KidSTART in high-incidence community estates",           "b-amber"),
-                ("Reporter training",      "Refresh CYPA mandatory reporting obligations for teachers and GPs",              "b-blue"),
-            ]),
-    2: dict(name="Chronic Spousal Cycle",     emoji="🔄", color="#8b5cf6", css="c2",
-            badge="b-purple", badge_txt="Chronic",
-            profile="100% financial stress, 26% prior contact, mostly female spouses. Lower severity but recurring — patterns repeat across years.",
-            signal="Recidivism risk 0.38. Women stay due to financial dependency or fear.",
-            who="PSC Protection Officers, PAVE, TRANS-SAFE Centre, PPO unit",
-            urgency="Moderate — structured follow-up within 1 week",
-            interventions=[
-                ("Long-term counselling",  "Assign dedicated case worker — minimum 12-month engagement plan",                "b-purple"),
-                ("DVERT referral",         "Fast-track to Domestic Violence Emergency Response Team for police cases",        "b-red"),
-                ("Financial independence", "Connect to WSG employment support, skills training, childcare subsidies",        "b-green"),
-                ("Safety planning",        "Ensure victim has PPO, safe word, and emergency contacts documented",            "b-amber"),
-                ("Perpetrator programme",  "Mandatory Counselling Order assessment for repeat incidents",                    "b-blue"),
-            ]),
-    3: dict(name="Chronic Family Cycle",      emoji="🔁", color="#ec4899", css="c3",
-            badge="b-red",    badge_txt="URGENT",
-            profile="100% prior contact, 100% financial stress, 100% intergenerational risk, all child victims. Highest recidivism (0.87). Past intervention did not resolve the root cause.",
-            signal="67% high-risk. Violence is entrenched across generations.",
-            who="MSF PSV, CPSCs, Foster Care caseworkers, School DSAs",
-            urgency="URGENT — escalate within 24 hours",
-            interventions=[
-                ("Statutory review",       "Escalate to MSF PSV for CYPA investigation and consider supervision order",     "b-red"),
-                ("Out-of-home assessment", "Evaluate foster/kinship care placement if home remains unsafe",                  "b-red"),
-                ("Intensive therapy",      "Multisystemic Therapy (MST) or Family Preservation Services",                   "b-amber"),
-                ("Parenting programme",    "Triple P or Circle of Security — mandatory if case stays at home",               "b-blue"),
-                ("School welfare check",   "Weekly welfare checks via school; flag absenteeism immediately",                 "b-purple"),
-            ]),
+    0: dict(
+        name="Silent Pressure Cooker", emoji="🫧", color="#f59e0b", css="c0",
+        profile="No financial stress, Spouse + VA victims, latent risk. Families are not reaching services despite underlying vulnerability.",
+        signal="Low ecological risk. Danger is hidden — under-reporting is common.",
+        who="Community Development Councils, RCs, FSC outreach workers",
+        tiers={
+            "critical": dict(
+                badge="b-red", badge_txt="CRITICAL",
+                urgency="CRITICAL — assess within 24 hours",
+                interventions=[
+                    ("Immediate home visit",    "Dispatch outreach worker for same-day safety assessment — do not delay despite no prior contact",         "b-red"),
+                    ("Emergency safety plan",   "Document safe word, emergency contacts, and evacuation plan with victim",                                  "b-red"),
+                    ("PPO/MPO application",     "Assist victim to file for Personal Protection Order or Mandatory Counselling Order immediately",           "b-amber"),
+                    ("Crisis service referral", "Refer to PAVE or TRANS-SAFE Centre crisis line; link to ComCare emergency assistance",                    "b-purple"),
+                    ("VA protective check",     "Arrange same-day welfare check for any elderly/disabled household members",                                "b-blue"),
+                ],
+            ),
+            "elevated": dict(
+                badge="b-amber", badge_txt="Priority",
+                urgency="Priority — act within 1 week",
+                interventions=[
+                    ("Priority home visit",     "Schedule home visit within 5 working days; conduct structured safety screening",                          "b-amber"),
+                    ("Financial safety net",    "Link to ComCare, Workfare, utility assistance to reduce dependency vulnerability",                         "b-green"),
+                    ("PPO awareness",           "Ensure victim knows legal rights under Women's Charter and how to apply for PPO",                          "b-purple"),
+                    ("Service warm handoff",    "Facilitate direct referral to FSC counsellor — do not leave with a leaflet only",                         "b-blue"),
+                ],
+            ),
+            "routine": dict(
+                badge="b-green", badge_txt="Preventive",
+                urgency="Preventive — act within 2–4 weeks",
+                interventions=[
+                    ("Grassroots outreach",     "Engage through CCs and RCs to build trust before crisis escalates",                                       "b-blue"),
+                    ("Financial screening",     "Link to ComCare, Workfare, utility assistance",                                                            "b-green"),
+                    ("VA welfare checks",       "Schedule routine home visits for elderly/disabled household members",                                      "b-amber"),
+                    ("PPO awareness",           "Ensure female spouses know their legal rights under the Women's Charter",                                  "b-purple"),
+                ],
+            ),
+        },
+    ),
+    1: dict(
+        name="Ecological Hotspot Child", emoji="🏘️", color="#ef4444", css="c1",
+        profile="Financial stress, zero prior contact, all child victims, high community incidence. Risk is environmental — these families are undetected.",
+        signal="First contact is the critical intervention window.",
+        who="School counsellors, Allied Educators, MOE-FSC liaisons, KidSTART",
+        tiers={
+            "critical": dict(
+                badge="b-red", badge_txt="CRITICAL",
+                urgency="CRITICAL — statutory response same day",
+                interventions=[
+                    ("CYPA mandatory report",   "File immediate report under Children and Young Persons Act — do not wait for confirmation",                "b-red"),
+                    ("MSF PSV referral",        "Escalate to MSF Child Protective Service for urgent investigation and safety determination",                "b-red"),
+                    ("Emergency placement",     "Assess suitability of temporary foster or kinship care if home environment is unsafe",                     "b-red"),
+                    ("School immediate alert",  "Notify school principal and AED; increase daily welfare checks and document observations",                 "b-amber"),
+                    ("Multi-agency meeting",    "Convene Child Protection Conference within 72 hours with school, MSF, and medical if applicable",          "b-purple"),
+                ],
+            ),
+            "elevated": dict(
+                badge="b-red", badge_txt="High Alert",
+                urgency="High alert — triage within 48 hours",
+                interventions=[
+                    ("School monitoring",       "Equip AEDs and counsellors to detect unexplained injuries and absenteeism",                                "b-red"),
+                    ("Childcare alerts",        "Train childcare centre staff on physical abuse indicators for 0–6 year olds",                              "b-red"),
+                    ("Priority casework",       "Assign dedicated caseworker; schedule home visit within 48 hours",                                         "b-amber"),
+                    ("Reporter training",       "Refresh CYPA mandatory reporting obligations for teachers and GPs",                                        "b-blue"),
+                ],
+            ),
+            "routine": dict(
+                badge="b-amber", badge_txt="Monitor",
+                urgency="Monitor — act within 2 weeks",
+                interventions=[
+                    ("School monitoring",       "Equip AEDs and counsellors to detect unexplained injuries and absenteeism",                                "b-amber"),
+                    ("Estate campaign",         "Parenting workshops and KidSTART in high-incidence community estates",                                     "b-blue"),
+                    ("Reporter training",       "Refresh CYPA mandatory reporting obligations for teachers and GPs",                                        "b-blue"),
+                ],
+            ),
+        },
+    ),
+    2: dict(
+        name="Chronic Spousal Cycle", emoji="🔄", color="#8b5cf6", css="c2",
+        profile="Financial stress, 26% prior contact, mostly female spouses. Lower severity but recurring — patterns repeat across years.",
+        signal="Recidivism risk 0.38. Women stay due to financial dependency or fear.",
+        who="PSC Protection Officers, PAVE, TRANS-SAFE Centre, PPO unit",
+        tiers={
+            "critical": dict(
+                badge="b-red", badge_txt="CRITICAL",
+                urgency="CRITICAL — safety plan within 24 hours",
+                interventions=[
+                    ("DVERT emergency referral","Fast-track to Domestic Violence Emergency Response Team — activate immediately for police cases",           "b-red"),
+                    ("Emergency PPO",           "Assist victim to file for emergency PPO and expedited court hearing same day if possible",                  "b-red"),
+                    ("Safe house assessment",   "Assess suitability for refuge placement at PAVE or TRANS-SAFE Centre if home is unsafe",                   "b-red"),
+                    ("Crisis safety plan",      "Document safe word, escape route, emergency contacts, and financial access before worker leaves",           "b-amber"),
+                    ("Perpetrator alert",       "Notify police for immediate perpetrator interview; assess Mandatory Counselling Order eligibility",          "b-purple"),
+                ],
+            ),
+            "elevated": dict(
+                badge="b-purple", badge_txt="Priority",
+                urgency="Priority — structured follow-up within 1 week",
+                interventions=[
+                    ("Dedicated caseworker",    "Assign dedicated case worker — minimum 12-month engagement plan",                                          "b-purple"),
+                    ("DVERT referral",          "Fast-track to Domestic Violence Emergency Response Team for police cases",                                  "b-red"),
+                    ("Safety planning",         "Ensure victim has PPO, safe word, and emergency contacts documented",                                       "b-amber"),
+                    ("Financial independence",  "Connect to WSG employment support, skills training, childcare subsidies",                                   "b-green"),
+                ],
+            ),
+            "routine": dict(
+                badge="b-purple", badge_txt="Chronic",
+                urgency="Moderate — structured follow-up within 1 week",
+                interventions=[
+                    ("Long-term counselling",   "Assign dedicated case worker — minimum 12-month engagement plan",                                          "b-purple"),
+                    ("Financial independence",  "Connect to WSG employment support, skills training, childcare subsidies",                                   "b-green"),
+                    ("Safety planning",         "Ensure victim has PPO, safe word, and emergency contacts documented",                                       "b-amber"),
+                    ("Perpetrator programme",   "Mandatory Counselling Order assessment for repeat incidents",                                               "b-blue"),
+                ],
+            ),
+        },
+    ),
+    3: dict(
+        name="Chronic Family Cycle", emoji="🔁", color="#ec4899", css="c3",
+        profile="100% prior contact, 100% financial stress, 100% intergenerational risk, all child victims. Highest recidivism (0.87). Past intervention did not resolve the root cause.",
+        signal="Violence is entrenched across generations.",
+        who="MSF PSV, CPSCs, Foster Care caseworkers, School DSAs",
+        tiers={
+            "critical": dict(
+                badge="b-red", badge_txt="CRITICAL",
+                urgency="CRITICAL — escalate within 24 hours",
+                interventions=[
+                    ("Statutory review",        "Escalate immediately to MSF PSV for CYPA investigation — prior intervention has not resolved root cause",  "b-red"),
+                    ("Emergency placement",     "Initiate foster/kinship care placement assessment if home remains unsafe for children",                     "b-red"),
+                    ("Multi-agency crisis",     "Convene Child Protection Conference within 24 hours; include school, medical, police, and FSC",             "b-red"),
+                    ("School welfare alert",    "Flag all children in household for immediate daily welfare checks; report any injuries same day",           "b-amber"),
+                    ("Intensive therapy order", "Apply for court-ordered Multisystemic Therapy (MST) or Family Preservation Services",                      "b-purple"),
+                ],
+            ),
+            "elevated": dict(
+                badge="b-red", badge_txt="URGENT",
+                urgency="URGENT — escalate within 24 hours",
+                interventions=[
+                    ("Statutory review",        "Escalate to MSF PSV for CYPA investigation and consider supervision order",                                "b-red"),
+                    ("Out-of-home assessment",  "Evaluate foster/kinship care placement if home remains unsafe",                                             "b-red"),
+                    ("Intensive therapy",       "Multisystemic Therapy (MST) or Family Preservation Services",                                              "b-amber"),
+                    ("School welfare check",    "Weekly welfare checks via school; flag absenteeism immediately",                                            "b-purple"),
+                ],
+            ),
+            "routine": dict(
+                badge="b-amber", badge_txt="Priority",
+                urgency="Priority — structured engagement within 1 week",
+                interventions=[
+                    ("Intensive therapy",       "Multisystemic Therapy (MST) or Family Preservation Services",                                              "b-amber"),
+                    ("Parenting programme",     "Triple P or Circle of Security — mandatory if case stays at home",                                         "b-blue"),
+                    ("School welfare check",    "Weekly welfare checks via school; flag absenteeism immediately",                                            "b-purple"),
+                    ("Case conference",         "Quarterly multi-agency case conference to review progress and escalation triggers",                         "b-grey"),
+                ],
+            ),
+        },
+    ),
 }
 
+def get_tier_cfg(cid, prob):
+    """Return merged dict of base cluster config + tier-specific urgency/interventions/badge."""
+    base = CLUSTER_CFG[cid]
+    if prob >= 0.70:   key = "critical"
+    elif prob >= 0.45: key = "elevated"
+    else:              key = "routine"
+    return {**base, **base["tiers"][key]}
+
+
 ABUSE_PROXY = {"Physical Abuse":0.7,"Sexual Abuse":0.8,"Neglect":0.5,"Emotional & Psychological Abuse":0.4,"Self-Neglect":0.5}
+
 AGE_ORDINAL = {"0-6 years":0,"7-12 years":1,"13-16 years":2,"17-18 years":3,
-               "18-29 years":4,"18-64 years":5,"30-39 years":6,"40-49 years":7,
-               "50-64 years":8,"65+ years":9}
+               "18-29 years":4,"30-39 years":5,"40-49 years":6,
+               "50-64 years":7,"65+ years":8}
+
 SINGAPORE_ESTATES = [
     "Ang Mo Kio","Bedok","Bishan","Bukit Batok","Bukit Merah","Bukit Panjang",
     "Bukit Timah","Central Area","Choa Chu Kang","Clementi","Geylang","Hougang",
@@ -144,6 +260,30 @@ SINGAPORE_ESTATES = [
     "Punggol","Queenstown","Sembawang","Sengkang","Serangoon","Tampines",
     "Toa Payoh","Woodlands","Yishun",
 ]
+
+# ── Batch input normalization maps (case-insensitive → exact dataset value) ──
+_VC_MAP  = {v.lower(): v for v in ["Child", "Spouse", "Non-Elderly VA", "Elderly VA"]}
+_AGE_MAP = {a.lower(): a for a in ["0-6 years", "7-12 years", "13-16 years", "17-18 years",
+                                    "18-29 years", "30-39 years", "40-49 years",
+                                    "50-64 years", "65+ years"]}
+_SEX_MAP = {"female": "Female", "male": "Male", "f": "Female", "m": "Male"}
+_SRC_MAP = {s.lower(): s for s in ["Community", "Hospital", "Hotline", "Police",
+                                    "School", "Social Service"]}
+
+def _norm_cat(val, mapping, default):
+    """Case-insensitive + whitespace-stripped lookup; returns default if not found."""
+    return mapping.get(str(val).strip().lower(), default)
+
+def _norm_psc(val):
+    """Accept 1/0, True/False, Yes/No, Y/N."""
+    return 1 if str(val).strip().lower() in {"1", "yes", "true", "y"} else 0
+
+def _norm_hs(val, lo=2, hi=6):
+    """Parse household size robustly; clamp to [lo, hi]."""
+    try:
+        return max(lo, min(hi, int(float(val))))
+    except (ValueError, TypeError):
+        return 4
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -179,7 +319,7 @@ arts = load_arts()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# LOAD BASE DATA (no processed_data.csv — cluster derived on-the-fly)
+# LOAD BASE DATA
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load_base():
@@ -190,7 +330,6 @@ def load_base():
         st.stop()
         
     df = pd.read_csv(sorted(cands)[-1], low_memory=False)
-    df.loc[df["Victim_Category"]=="Non-Elderly VA","Age_Group"] = "18-64 years"
 
     # Re-derive engineered features from raw columns
     fsi = ((df["Community_Incidence_Rate"]>=1.65)|
@@ -229,7 +368,6 @@ base_df = load_base()
 # ─────────────────────────────────────────────────────────────────────────────
 def derive_features(vc, age, sex, src, hs, psc, sev=3.0, cir=2.4):
     """Derive all 7 engineered features from the 6 user inputs + defaults."""
-    if vc == "Non-Elderly VA": age = "18-64 years"
     fsi = int(cir>=1.65 or (vc=="Spouse" and psc==1 and hs>=4))
     igf = int(vc=="Child" and psc==1 and fsi==1)
     gpf = int((vc=="Spouse" and sex=="Female" and sev>=3.0) or (vc=="Elderly VA" and sex=="Female"))
@@ -284,7 +422,7 @@ def render_interventions(cfg):
             unsafe_allow_html=True)
 
 def cluster_card(cid, n=None, hrf=None):
-    cfg = CLUSTER_CFG[cid]
+    cfg = {**CLUSTER_CFG[cid], **CLUSTER_CFG[cid]["tiers"]["routine"]}
     extra = ""
     if n is not None:
         extra = f'<div style="font-size:12px;color:#64748b">n={n} ({n/len(base_df):.0%})</div>'
@@ -394,7 +532,7 @@ if active_page == "📋 Case Triage":
                                feats["fsi"], feats["igf"], feats["gpf"],
                                feats["rss"], feats["eri"])
             t_lbl, t_col, t_badge = tier(hrf_prob)
-            cfg = CLUSTER_CFG[cid]
+            cfg = get_tier_cfg(cid, hrf_prob)
 
             st.divider()
 
@@ -458,6 +596,7 @@ if active_page == "📋 Case Triage":
 
         if uploaded:
             raw = pd.read_csv(uploaded)
+            raw.columns = raw.columns.str.strip()  # strip whitespace from column names
             if "Family_ID" not in raw.columns:
                 raw.insert(0,"Family_ID",[f"FAM-{i:04d}" for i in range(1,len(raw)+1)])
             if "Estate" not in raw.columns:
@@ -467,19 +606,19 @@ if active_page == "📋 Case Triage":
             progress = st.progress(0, text="Scoring cases...")
             for idx, row in raw.iterrows():
                 r = row.to_dict()
-                vc_  = str(r.get("Victim_Category","Child"))
-                age_ = str(r.get("Age_Group","0-6 years"))
-                sex_ = str(r.get("Sex","Female"))
-                src_ = str(r.get("Reporting_Source","School"))
-                hs_  = int(r.get("Household_Size",4))
-                psc_ = int(r.get("Prior_Social_Service_Contact",0))
+                vc_  = _norm_cat(r.get("Victim_Category","Child"),  _VC_MAP,  "Child")
+                age_ = _norm_cat(r.get("Age_Group","0-6 years"),    _AGE_MAP, "0-6 years")
+                sex_ = _norm_cat(r.get("Sex","Female"),             _SEX_MAP, "Female")
+                src_ = _norm_cat(r.get("Reporting_Source","School"),_SRC_MAP, "School")
+                hs_  = _norm_hs(r.get("Household_Size", 4))
+                psc_ = _norm_psc(r.get("Prior_Social_Service_Contact", 0))
                 try:
                     f_   = derive_features(vc_,age_,sex_,src_,hs_,psc_)
                     cid_ = get_cluster(vc_,f_["age"],hs_,psc_,f_["fsi"],f_["igf"],f_["rss"],f_["eri"])
                     hp= predict(vc_,f_["age"],sex_,src_,hs_,psc_,
                                 f_["fsi"],f_["igf"],f_["gpf"],f_["rss"],f_["eri"])
                     tlbl,_,_= tier(hp)
-                    cfg_  = CLUSTER_CFG[cid_]
+                    cfg_  = get_tier_cfg(cid_, hp)
                     results.append({
                         "Family_ID"      : r.get("Family_ID","—"),
                         "Estate"         : r.get("Estate","—"),
@@ -524,7 +663,8 @@ if active_page == "📋 Case Triage":
             sel = res_df[res_df["Family_ID"]==sel_id].iloc[0]
             sel_prob = sel["_prob"]
             t_lbl2,t_col2,_ = tier(sel_prob)
-            cfg2 = CLUSTER_CFG[[c for c in CLUSTER_CFG if CLUSTER_CFG[c]["name"] in sel.get("Archetype","")][0]] if any(CLUSTER_CFG[c]["name"] in sel.get("Archetype","") for c in CLUSTER_CFG) else CLUSTER_CFG[0]
+            _cid2 = next((c for c in CLUSTER_CFG if CLUSTER_CFG[c]["name"] in sel.get("Archetype","")), 0)
+            cfg2 = get_tier_cfg(_cid2, sel_prob)
 
             d1,d2 = st.columns([1,1.5])
             with d1:
@@ -626,7 +766,6 @@ elif active_page == "🗺️ Cluster Intelligence":
         st.markdown(
             f'<div class="ccard {cfg["css"]}">'
             f'<div class="ctitle" style="font-size:17px">{cfg["emoji"]} {cfg["name"]}</div>'
-            f'<span class="badge {cfg["badge"]}">{cfg["badge_txt"]}</span>'
             f'<p style="font-size:13px;margin-top:8px">{cfg["profile"]}</p>'
             f'<p style="font-size:12px;color:#64748b"><b>Key signal:</b> {cfg["signal"]}</p>'
             f'</div>', unsafe_allow_html=True)
@@ -672,14 +811,17 @@ elif active_page == "🗺️ Cluster Intelligence":
     fig_yr.update_yaxes(title_text="High Risk rate",secondary_y=True,tickformat=".0%")
     st.plotly_chart(fig_yr,use_container_width=True)
 
-    st.markdown(f'<div class="sec-hdr">Intervention strategy</div>', unsafe_allow_html=True)
-    st.caption(f"**Lead agency:** {cfg['who']}  |  **Urgency:** {cfg['urgency']}")
-    for i,(title,desc,badge_cls) in enumerate(cfg["interventions"],1):
-        st.markdown(
-            f'<div class="icard"><span style="color:#94a3b8;font-size:12px">Step {i}</span><br>'
-            f'<span class="badge {badge_cls}">{title}</span>'
-            f'<span style="font-size:13px;margin-left:10px">{desc}</span></div>',
-            unsafe_allow_html=True)
+    st.markdown(f'<div class="sec-hdr">Intervention strategy by risk level</div>', unsafe_allow_html=True)
+    st.caption(f"**Lead agency:** {cfg['who']}")
+    for _tk, _tl in [("critical","🔴 Critical (≥70%)"),("elevated","🟡 Elevated (45–69%)"),("routine","🟢 Routine (<45%)")]:
+        _td = cfg["tiers"][_tk]
+        with st.expander(f"{_tl}  —  {_td['urgency']}", expanded=(_tk=="critical")):
+            for i,(title,desc,badge_cls) in enumerate(_td["interventions"],1):
+                st.markdown(
+                    f'<div class="icard"><span style="color:#94a3b8;font-size:12px">Step {i}</span><br>'
+                    f'<span class="badge {badge_cls}">{title}</span>'
+                    f'<span style="font-size:13px;margin-left:10px">{desc}</span></div>',
+                    unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
