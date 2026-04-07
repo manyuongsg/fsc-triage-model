@@ -133,7 +133,7 @@ CLUSTER_CFG = {
             ]),
 }
 
-ABUSE_PROXY = {"Physical Abuse":0.8,"Sexual Abuse":1.0,"Neglect":0.5,"Emotional & Psychological Abuse":0.6, "Self-Neglect": 0.5}
+ABUSE_PROXY = {"Physical Abuse":0.7,"Sexual Abuse":0.8,"Neglect":0.5,"Emotional & Psychological Abuse":0.4,"Self-Neglect":0.5}
 AGE_ORDINAL = {"0-6 years":0,"7-12 years":1,"13-16 years":2,"17-18 years":3,
                "18-29 years":4,"18-64 years":5,"30-39 years":6,"40-49 years":7,
                "50-64 years":8,"65+ years":9}
@@ -163,14 +163,11 @@ def load_arts():
             
     # Search for the HRF and IIN models inside the MODEL_DIR
     hrf_cands = sorted(MODEL_DIR.glob("msf_hrf_model_*.pkl"))
-    iin_cands = sorted(MODEL_DIR.glob("msf_iin_model_*.pkl"))
-    
+
     if not hrf_cands: st.error(f"Missing msf_hrf_model_*.pkl in {MODEL_DIR}"); st.stop()
-    if not iin_cands: st.error(f"Missing msf_iin_model_*.pkl in {MODEL_DIR}"); st.stop()
-    
+
     return {
         "hrf":     joblib.load(hrf_cands[0]),
-        "iin":     joblib.load(iin_cands[0]),
         "km":      joblib.load(MODEL_DIR / "msf_cluster_model.pkl"),
         "sc_cl":   joblib.load(MODEL_DIR / "scaler_cluster.pkl"),
         "sc_mod":  joblib.load(MODEL_DIR / "scaler.pkl"),
@@ -217,6 +214,7 @@ def load_base():
     # Assign cluster via saved model
     meta  = arts["meta"]; le_cl = meta["le_cl"]
     df_cl = df.copy()
+    df_cl["Age_Group_ord"] = df_cl["Age_Group"].map(AGE_ORDINAL)  # ordinal encoding matches notebook
     for col in meta["cluster_cat_features"]:
         df_cl[f"{col}_cl_enc"] = le_cl[col].transform(df_cl[col])
     X_cl = df_cl[meta["cluster_feature_cols"]].values.astype(float)
@@ -248,17 +246,17 @@ def get_cluster(vc, age, hs, psc, fsi, igf, rss, eri, sev=3.0, cir=2.4):
         cl_row[f"{col}_cl_enc"] = int(le_cl[col].transform([val])[0]) if val in le_cl[col].classes_ else 0
     num_vals = {"Financial_Stress_Index":fsi,"Household_Size":hs,"Prior_Social_Service_Contact":psc,
                 "Community_Incidence_Rate":cir,"Severity_Score":sev,"Recidivism_Risk_Score":rss,
-                "Ecological_Risk_Index":eri,"Intergenerational_Risk_Flag":igf}
+                "Ecological_Risk_Index":eri,"Intergenerational_Risk_Flag":igf,
+                "Age_Group_ord":AGE_ORDINAL.get(age, 4)}
     for col in meta["cluster_num_features"]: cl_row[col]=num_vals.get(col,0)
     X = np.array([[cl_row.get(f,0) for f in meta["cluster_feature_cols"]]],dtype=float)
     return int(arts["km"].predict(arts["sc_cl"].transform(X))[0])
 
-def predict(vc, age, sex, src, hs, psc, fsi, igf, gpf, rss, eri, cluster, sev=3.0, cir=2.4, year=2024):
+def predict(vc, age, sex, src, hs, psc, fsi, igf, gpf, rss, eri, sev=3.0, cir=2.4, year=2024):
     meta = arts["meta"]; le = arts["le"]
     feat_row = {}
     for col in meta["feature_cols"]:
-        if col == "Cluster": feat_row[col]=cluster
-        elif col == "Age_Group": feat_row[col]=AGE_ORDINAL.get(age,4)
+        if col == "Age_Group": feat_row[col]=AGE_ORDINAL.get(age,4)
         elif col in le:
             val={"Victim_Category":vc,"Sex":sex,"Reporting_Source":src}.get(col,le[col].classes_[0])
             feat_row[col]=int(le[col].transform([val])[0]) if val in le[col].classes_ else 0
@@ -271,8 +269,7 @@ def predict(vc, age, sex, src, hs, psc, fsi, igf, gpf, rss, eri, cluster, sev=3.
     X = np.array([[feat_row[c] for c in meta["feature_cols"]]],dtype=float)
     Xs = arts["sc_mod"].transform(X)
     hrf_prob = float(arts["hrf"].predict_proba(Xs)[0,1])
-    iin_prob = float(arts["iin"].predict_proba(Xs)[0,1]) if hrf_prob>=0.50 else None
-    return hrf_prob, iin_prob
+    return hrf_prob
 
 def tier(prob):
     if prob>=0.70: return "🔴 Critical",  "#ef4444", "b-red"
@@ -341,9 +338,8 @@ with st.sidebar:
         key="radio_proj"
     )
     st.divider()
-    st.caption(f"Best Layer 2: {arts['meta']['hrf_model_name']}")
-    st.caption(f"Best Layer 3: {arts['meta']['iin_model_name']}")
-    st.caption("K-Means k=4 · Temporal split 2021→2024")
+    st.caption(f"Best model: {arts['meta']['hrf_model_name']}")
+    st.caption("K-Means k=4 · 80/20 temporal split")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ROUTING — detect which radio was changed
@@ -369,14 +365,14 @@ if active_page == "📋 Case Triage":
 
         st.markdown("**Step 1: Who is the victim?**")
         c1, c2, c3 = st.columns(3)
-        vc  = c1.selectbox("Victim category *", ["Child","Spouse","Elderly VA","Non-Elderly VA"])
+        vc  = c1.selectbox("Victim category *", ["Child","Spouse","Non-Elderly VA","Elderly VA",])
         sex = c2.selectbox("Sex *", ["Female","Male"])
         src = c3.selectbox("Reporting source *",
                            ["Police","School","Hospital","Social Service","Hotline","Community"])
 
         age_opts = {"Child":["0-6 years","7-12 years","13-16 years","17-18 years"],
-                    "Spouse":["20-64 years"],"Elderly VA":["65+ years"],
-                    "Non-Elderly VA":["18-64 years"]}
+                    "Spouse":["18-29 years","30-39 years","40-49 years","50-64 years"],
+                    "Non-Elderly VA":["18-29 years","30-39 years","40-49 years","50-64 years"],       "Elderly VA":["65+ years"]}
         age = st.selectbox("Age group *", age_opts[vc])
 
         st.markdown("**Step 2: Household information**")
@@ -394,16 +390,16 @@ if active_page == "📋 Case Triage":
             feats = derive_features(vc, age, sex, src, hs, psc)
             cid   = get_cluster(vc, feats["age"], hs, psc, feats["fsi"], feats["igf"],
                                  feats["rss"], feats["eri"])
-            hrf_prob, iin_prob = predict(vc, feats["age"], sex, src, hs, psc,
-                                          feats["fsi"], feats["igf"], feats["gpf"],
-                                          feats["rss"], feats["eri"], cid)
+            hrf_prob = predict(vc, feats["age"], sex, src, hs, psc,
+                               feats["fsi"], feats["igf"], feats["gpf"],
+                               feats["rss"], feats["eri"])
             t_lbl, t_col, t_badge = tier(hrf_prob)
             cfg = CLUSTER_CFG[cid]
 
             st.divider()
 
             # ── Score + Archetype row ─────────────────────────────────────────
-            col_score, col_arch, col_iin = st.columns([1, 1.4, 1])
+            col_score, col_arch = st.columns([1, 1.4])
 
             with col_score:
                 st.markdown(
@@ -424,25 +420,6 @@ if active_page == "📋 Case Triage":
                     f'<div style="font-size:12px;color:#475569;margin-top:6px">{cfg["signal"]}</div>'
                     f'</div>', unsafe_allow_html=True)
 
-            with col_iin:
-                if iin_prob is not None:
-                    iin_col = "#ef4444" if iin_prob>=0.5 else "#f59e0b"
-                    iin_txt = "URGENT — same day" if iin_prob>=0.5 else "Schedule within 1 week"
-                    st.markdown(
-                        f'<div style="text-align:center;padding:18px;background:#f8fafc;'
-                        f'border-radius:12px;border:1.5px solid {iin_col}">'
-                        f'<div style="font-size:2.2rem;font-weight:800;color:{iin_col}">{iin_prob:.0%}</div>'
-                        f'<div style="font-size:13px;font-weight:600;color:{iin_col}">{iin_txt}</div>'
-                        f'<div style="font-size:12px;color:#64748b;margin-top:6px">Intervention urgency</div>'
-                        f'</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(
-                        '<div style="text-align:center;padding:18px;background:#f8fafc;'
-                        'border-radius:12px;border:1.5px solid #e2e8f0;">'
-                        '<div style="font-size:1.6rem;color:#94a3b8">—</div>'
-                        '<div style="font-size:13px;color:#94a3b8">Not applicable</div>'
-                        '<div style="font-size:12px;color:#cbd5e1;margin-top:6px">Urgency only computed for High Risk cases</div>'
-                        '</div>', unsafe_allow_html=True)
 
             # ── Intervention strategy ─────────────────────────────────────────
             st.markdown(
@@ -499,8 +476,8 @@ if active_page == "📋 Case Triage":
                 try:
                     f_   = derive_features(vc_,age_,sex_,src_,hs_,psc_)
                     cid_ = get_cluster(vc_,f_["age"],hs_,psc_,f_["fsi"],f_["igf"],f_["rss"],f_["eri"])
-                    hp,ip= predict(vc_,f_["age"],sex_,src_,hs_,psc_,
-                                   f_["fsi"],f_["igf"],f_["gpf"],f_["rss"],f_["eri"],cid_)
+                    hp= predict(vc_,f_["age"],sex_,src_,hs_,psc_,
+                                f_["fsi"],f_["igf"],f_["gpf"],f_["rss"],f_["eri"])
                     tlbl,_,_= tier(hp)
                     cfg_  = CLUSTER_CFG[cid_]
                     results.append({
@@ -516,12 +493,11 @@ if active_page == "📋 Case Triage":
                         "_prob"          : hp,
                         "Tier"           : tlbl,
                         "Archetype"      : f"{cfg_['emoji']} {cfg_['name']}",
-                        "IIN"            : f"{ip:.0%}" if ip else "—",
                         "Urgency"        : cfg_["urgency"],
                     })
                 except Exception as e:
                     results.append({"Family_ID":r.get("Family_ID","?"),"Tier":"⚠ Error","_prob":0,
-                                    "Risk_Score":"—","Archetype":str(e)[:40],"IIN":"—","Urgency":"—",
+                                    "Risk_Score":"—","Archetype":str(e)[:40],"Urgency":"—",
                                     "Estate":"—","Victim_Category":vc_,"Age_Group":age_,
                                     "Sex":sex_,"Reporting_Source":src_,"Household_Size":hs_,"Prior_Contact":"?"})
                 progress.progress((idx+1)/len(raw), text=f"Scoring {idx+1}/{len(raw)}...")
@@ -538,7 +514,7 @@ if active_page == "📋 Case Triage":
 
             # Display table
             display_cols = ["Family_ID","Estate","Victim_Category","Age_Group","Sex",
-                            "Risk_Score","Tier","Archetype","IIN","Urgency"]
+                            "Risk_Score","Tier","Archetype","Urgency"]
             st.dataframe(res_df[[c for c in display_cols if c in res_df.columns]],
                          hide_index=True, use_container_width=True)
 
@@ -560,7 +536,6 @@ if active_page == "📋 Case Triage":
                     f'</div>', unsafe_allow_html=True)
                 st.markdown(f"**Archetype:** {sel.get('Archetype','—')}")
                 st.markdown(f"**Urgency:** {sel.get('Urgency','—')}")
-                st.markdown(f"**Immediate Intervention:** {sel.get('IIN','—')}")
             with d2:
                 st.markdown(f'<div class="sec-hdr">Intervention steps</div>', unsafe_allow_html=True)
                 st.caption(f"**Lead agency:** {cfg2['who']}")
@@ -592,11 +567,10 @@ elif active_page == "📊 Overview Dashboard":
     st.title("📊 Overview Dashboard")
     st.caption("Training population snapshot — 2,000 cases, 2021–2024 | MSF DV Trends Report 2025")
 
-    c1,c2,c3,c4 = st.columns(4)
+    c1,c2,c3 = st.columns(3)
     c1.metric("Total cases",       f"{len(base_df):,}")
     c2.metric("High Risk (HRF=1)", f"{base_df['High_Risk_Flag'].sum():,} ({base_df['High_Risk_Flag'].mean():.1%})")
-    c3.metric("Urgent (IIN=1)",    f"{base_df['Immediate_Intervention_Needed'].sum():,} ({base_df['Immediate_Intervention_Needed'].mean():.1%})")
-    c4.metric("Best model AUC",    f"{arts['meta']['hrf_model_name']}")
+    c3.metric("Best model",        arts['meta']['hrf_model_name'])
 
     st.markdown('<div class="sec-hdr">Risk distribution</div>', unsafe_allow_html=True)
     ca,cb = st.columns(2)
@@ -660,7 +634,6 @@ elif active_page == "🗺️ Cluster Intelligence":
         stats = {
             "Cases in cluster"  : f"{len(sub):,} ({len(sub)/len(base_df):.0%} of all cases)",
             "High Risk rate"    : f"{sub['High_Risk_Flag'].mean():.1%}",
-            "Need intervention" : f"{sub['Immediate_Intervention_Needed'].mean():.1%}",
             "Financial stress"  : f"{sub['Financial_Stress_Index'].mean():.0%}",
             "Prior contact"     : f"{sub['Prior_Social_Service_Contact'].mean():.0%}",
             "Avg severity"      : f"{sub['Severity_Score'].mean():.2f}",
@@ -715,13 +688,14 @@ elif active_page == "🗺️ Cluster Intelligence":
 elif active_page == "📚 How the Model Works":
     st.title("📚 How the Model Works")
 
-    st.markdown("### Three-layer predictive pipeline")
+    st.markdown("### Two-layer predictive pipeline")
     st.markdown("""
 | Layer | Method | Question answered |
 |-------|--------|------------------|
 | 1 — Archetypes | K-Means k=4 | *What type of family is this?* |
 | 2 — High Risk | 5 classifiers compared | *Is this family Tier 2 high risk?* |
-| 3 — Urgency | Cascade on HRF=1 cases | *Does this case need same-day intervention?* |
+
+Layer 1 and Layer 2 are **independent** — the cluster label is not passed as a feature to the classifier. K-Means is fitted on the training split only to prevent centroid leakage into evaluation.
 """)
 
     st.markdown("### Feature engineering (all derived inside the notebook)")
@@ -761,9 +735,8 @@ A smaller gap means the model learned real patterns, not just memorised the trai
     st.code("""
 app.py                                      ← this file
 final_refined_family_at_risk_ml_dataset_v3.csv  ← dataset
-msf_hrf_model_*.pkl                         ← Layer 2 model
-msf_iin_model_*.pkl                         ← Layer 3 model
-msf_cluster_model.pkl                       ← K-Means model
+msf_hrf_model_*.pkl                         ← Layer 2 classifier (High Risk Flag)
+msf_cluster_model.pkl                       ← K-Means k=4 model (Layer 1)
 scaler.pkl                                  ← StandardScaler (prediction)
 scaler_cluster.pkl                          ← StandardScaler (clustering)
 label_encoders.pkl                          ← categorical encoders
