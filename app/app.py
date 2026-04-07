@@ -160,8 +160,8 @@ CLUSTER_CFG = {
     ),
     2: dict(
         name="Chronic Spousal Cycle", emoji="🔄", color="#8b5cf6", css="c2",
-        profile="Financial stress, 26% prior contact, mostly female spouses. Lower severity but recurring — patterns repeat across years.",
-        signal="Recidivism risk 0.38. Women stay due to financial dependency or fear.",
+        profile="Financial stress, 38% prior contact, mostly female spouses. Lower severity but recurring — patterns repeat across years.",
+        signal="Recidivism risk 0.44. Women stay due to financial dependency or fear.",
         who="PSC Protection Officers, PAVE, TRANS-SAFE Centre, PPO unit",
         tiers={
             "critical": dict(
