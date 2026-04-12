@@ -253,6 +253,18 @@ AGE_ORDINAL = {"0-6 years":0,"7-12 years":1,"13-16 years":2,"17-18 years":3,
                "18-29 years":4,"30-39 years":5,"40-49 years":6,
                "50-64 years":7,"65+ years":8}
 
+# Reporting source stress weights — Step 3.1 (FSI component)
+REPORT_STRESS = {
+    "Police": 0.4, "Hospital": 0.4, "Hotline": 0.2,
+    "Community": 0.0, "School": 0.0, "Social Service": 0.0,
+}
+# Mesosystem Isolation proxy — Step 3.6 (ERI component) & Step 3.7 (SIC)
+MESO_MAP = {
+    "Police": 1.0, "Hospital": 1.0, "Hotline": 0.6,
+    "School": 0.0, "Social Service": 0.0, "Community": 0.0,
+}
+CIR_MAX = 2.8  # max(Community_Incidence_Rate) from training data — used to normalise FSI_cir
+
 SINGAPORE_ESTATES = [
     "Ang Mo Kio","Bedok","Bishan","Bukit Batok","Bukit Merah","Bukit Panjang",
     "Bukit Timah","Central Area","Choa Chu Kang","Clementi","Geylang","Hougang",
@@ -331,24 +343,41 @@ def load_base():
         
     df = pd.read_csv(sorted(cands)[-1], low_memory=False)
 
-    # Re-derive engineered features from raw columns
-    fsi = ((df["Community_Incidence_Rate"]>=1.65)|
-           ((df["Victim_Category"]=="Spouse")&(df["Prior_Social_Service_Contact"]==1)&(df["Household_Size"]>=4))).astype(int)
-    df["Financial_Stress_Index"] = fsi
-    igf = ((df["Victim_Category"]=="Child")&(df["Prior_Social_Service_Contact"]==1)&(fsi==1)).astype(int)
+    # Re-derive engineered features from raw columns — formulas must match notebook Steps 3.1–3.7
+    # FSI: 3-component weighted index (Step 3.1)
+    fsi_cir     = df["Community_Incidence_Rate"] / CIR_MAX
+    fsi_report  = df["Reporting_Source"].map(REPORT_STRESS).fillna(0.0)
+    fsi_density = ((df["Household_Size"] - 2) / 4).clip(0, 1)
+    df["Financial_Stress_Index"] = (0.50*fsi_cir + 0.30*fsi_report + 0.20*fsi_density).clip(0,1).round(3)
+    fsi = df["Financial_Stress_Index"]
+
+    # IGF: Child + household size >= 3 + prior contact (Step 3.3)
+    igf = ((df["Victim_Category"]=="Child") &
+           (df["Household_Size"]>=3) &
+           (df["Prior_Social_Service_Contact"]==1)).astype(int)
     df["Intergenerational_Risk_Flag"] = igf
-    df["Gender_Power_Imbalance_Flag"] = (
-        ((df["Victim_Category"]=="Spouse")&(df["Sex"]=="Female")&(df["Severity_Score"]>=3.0))|
-        ((df["Victim_Category"]=="Elderly VA")&(df["Sex"]=="Female"))
-    ).astype(int)
+
+    # GPF: Female Spouse only (Step 3.4)
+    gpf = ((df["Sex"]=="Female") & (df["Victim_Category"]=="Spouse")).astype(int)
+    df["Gender_Power_Imbalance_Flag"] = gpf
+
+    # RSS: PSC*2 + FSI + IGF + GPF, divided by 5 (Step 3.5)
     df["Recidivism_Risk_Score"] = (
-        (df["Prior_Social_Service_Contact"]*2+fsi*1+igf*1+(df["Household_Size"]>=5).astype(int)*1)/5.0
-    ).clip(0,1).round(2)
-    ap = df["Type_of_Abuse"].map(ABUSE_PROXY)
+        (df["Prior_Social_Service_Contact"]*2 + fsi + igf + gpf) / 5.0
+    ).clip(0,1).round(3)
+
+    # ERI: 5-layer Bronfenbrenner composite (Step 3.6)
+    meso = df["Reporting_Source"].map(MESO_MAP).fillna(0.0)
     df["Ecological_Risk_Index"] = (
-        ap*0.30+((df["Household_Size"]-2)/4.0).clip(0,1)*0.20+
-        (df["Community_Incidence_Rate"]/3.0).clip(0,1)*0.25+fsi*0.15+df["Prior_Social_Service_Contact"]*0.10
+        df["Prior_Social_Service_Contact"]                 * 0.25 +
+        (df["Community_Incidence_Rate"] / 3.0).clip(0, 1) * 0.25 +
+        ((df["Household_Size"] - 2) / 4.0).clip(0, 1)     * 0.20 +
+        meso                                               * 0.20 +
+        fsi_report                                         * 0.10
     ).round(3)
+
+    # Stress_Isolation_Cross: FSI × Mesosystem Isolation (Step 3.7)
+    df["Stress_Isolation_Cross"] = (fsi * meso).round(3)
 
     # Assign cluster via saved model
     meta  = arts["meta"]; le_cl = meta["le_cl"]
@@ -367,14 +396,32 @@ base_df = load_base()
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────────────────────────────────────
 def derive_features(vc, age, sex, src, hs, psc, sev=3.0, cir=2.4):
-    """Derive all 7 engineered features from the 6 user inputs + defaults."""
-    fsi = int(cir>=1.65 or (vc=="Spouse" and psc==1 and hs>=4))
-    igf = int(vc=="Child" and psc==1 and fsi==1)
-    gpf = int((vc=="Spouse" and sex=="Female" and sev>=3.0) or (vc=="Elderly VA" and sex=="Female"))
-    rss = round(min((psc*2+fsi+igf+(1 if hs>=5 else 0))/5.0,1.0),2)
-    ap  = ABUSE_PROXY.get("Physical Abuse",0.8)
-    eri = round(ap*0.30+min((hs-2)/4.0,1)*0.20+min(cir/3.0,1)*0.25+fsi*0.15+psc*0.10,3)
-    return dict(fsi=fsi,igf=igf,gpf=gpf,rss=rss,eri=eri,age=age,sev=sev,cir=cir)
+    """Derive all engineered features from the 6 user inputs + defaults.
+    Formulas mirror notebook Steps 3.1–3.7 exactly."""
+    # FSI: 3-component weighted index (Step 3.1)
+    fsi_cir     = cir / CIR_MAX
+    fsi_report  = REPORT_STRESS.get(src, 0.0)
+    fsi_density = min((hs - 2) / 4.0, 1.0)
+    fsi = round(min(0.50*fsi_cir + 0.30*fsi_report + 0.20*fsi_density, 1.0), 3)
+    # IGF: Child + hs>=3 + prior contact (Step 3.3)
+    igf = int(vc == "Child" and hs >= 3 and psc == 1)
+    # GPF: Female Spouse only (Step 3.4)
+    gpf = int(sex == "Female" and vc == "Spouse")
+    # RSS: PSC*2 + FSI + IGF + GPF, divided by 5 (Step 3.5)
+    rss = round(min((psc*2 + fsi + igf + gpf) / 5.0, 1.0), 3)
+    # Mesosystem Isolation intermediate (Step 3.6)
+    meso = MESO_MAP.get(src, 0.0)
+    # ERI: 5-layer Bronfenbrenner composite (Step 3.6)
+    eri = round(
+        psc                    * 0.25 +
+        min(cir / 3.0, 1)      * 0.25 +
+        min((hs - 2) / 4.0, 1) * 0.20 +
+        meso                   * 0.20 +
+        fsi_report             * 0.10, 3)
+    # Stress_Isolation_Cross: FSI x Mesosystem (Step 3.7)
+    sic = round(fsi * meso, 3)
+    return dict(fsi=fsi, igf=igf, gpf=gpf, rss=rss, eri=eri, sic=sic,
+                age=age, sev=sev, cir=cir)
 
 def get_cluster(vc, age, hs, psc, fsi, igf, rss, eri, sev=3.0, cir=2.4):
     meta = arts["meta"]; le_cl = meta["le_cl"]
@@ -390,7 +437,7 @@ def get_cluster(vc, age, hs, psc, fsi, igf, rss, eri, sev=3.0, cir=2.4):
     X = np.array([[cl_row.get(f,0) for f in meta["cluster_feature_cols"]]],dtype=float)
     return int(arts["km"].predict(arts["sc_cl"].transform(X))[0])
 
-def predict(vc, age, sex, src, hs, psc, fsi, igf, gpf, rss, eri, sev=3.0, cir=2.4, year=2024):
+def predict(vc, age, sex, src, hs, psc, fsi, igf, gpf, rss, eri, sic, sev=3.0, cir=2.4, year=2024):
     meta = arts["meta"]; le = arts["le"]
     feat_row = {}
     for col in meta["feature_cols"]:
@@ -403,7 +450,7 @@ def predict(vc, age, sex, src, hs, psc, fsi, igf, gpf, rss, eri, sev=3.0, cir=2.
                            "Severity_Score":sev,"Community_Incidence_Rate":cir,
                            "Financial_Stress_Index":fsi,"Intergenerational_Risk_Flag":igf,
                            "Gender_Power_Imbalance_Flag":gpf,"Recidivism_Risk_Score":rss,
-                           "Ecological_Risk_Index":eri}.get(col,0)
+                           "Ecological_Risk_Index":eri,"Stress_Isolation_Cross":sic}.get(col,0)
     X = np.array([[feat_row[c] for c in meta["feature_cols"]]],dtype=float)
     Xs = arts["sc_mod"].transform(X)
     hrf_prob = float(arts["hrf"].predict_proba(Xs)[0,1])
@@ -530,7 +577,7 @@ if active_page == "📋 Case Triage":
                                  feats["rss"], feats["eri"])
             hrf_prob = predict(vc, feats["age"], sex, src, hs, psc,
                                feats["fsi"], feats["igf"], feats["gpf"],
-                               feats["rss"], feats["eri"])
+                               feats["rss"], feats["eri"], feats["sic"])
             t_lbl, t_col, t_badge = tier(hrf_prob)
             cfg = get_tier_cfg(cid, hrf_prob)
 
@@ -616,7 +663,7 @@ if active_page == "📋 Case Triage":
                     f_   = derive_features(vc_,age_,sex_,src_,hs_,psc_)
                     cid_ = get_cluster(vc_,f_["age"],hs_,psc_,f_["fsi"],f_["igf"],f_["rss"],f_["eri"])
                     hp= predict(vc_,f_["age"],sex_,src_,hs_,psc_,
-                                f_["fsi"],f_["igf"],f_["gpf"],f_["rss"],f_["eri"])
+                                f_["fsi"],f_["igf"],f_["gpf"],f_["rss"],f_["eri"],f_["sic"])
                     tlbl,_,_= tier(hp)
                     cfg_  = get_tier_cfg(cid_, hp)
                     results.append({
