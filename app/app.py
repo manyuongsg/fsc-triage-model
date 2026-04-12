@@ -26,6 +26,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from pathlib import Path
+import datetime
+import csv
 
 warnings.filterwarnings("ignore")
 
@@ -36,6 +38,63 @@ ROOT_DIR = APP_DIR.parent
 # Define exactly where your models and data live relative to the root
 MODEL_DIR = ROOT_DIR / "models" # <-- Change "models" if your folder is named differently
 DATA_DIR = ROOT_DIR / "data"
+LOG_PATH  = ROOT_DIR / "logs" / "predictions.csv"
+LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+# ── Audit log columns ─────────────────────────────────────────────────────────
+LOG_COLS = [
+    "timestamp_sgt", "model_version", "model_file", "source",
+    "victim_category", "age_group", "sex", "reporting_source",
+    "household_size", "prior_social_service_contact",
+    "fsi", "igf", "gpf", "rss", "eri",
+    "cluster_id", "cluster_name", "risk_score_pct", "tier",
+]
+
+def _get_model_version():
+    """Return (version_tag, filename) of the active HRF model for audit logs."""
+    hrf_cands = sorted(MODEL_DIR.glob("msf_hrf_model_*.pkl"))
+    if not hrf_cands:
+        return "unknown", "unknown"
+    fname = hrf_cands[0].name
+    mtime = datetime.datetime.fromtimestamp(hrf_cands[0].stat().st_mtime)
+    return mtime.strftime("%Y%m%d"), fname
+
+def log_prediction(source, vc, age, sex, src, hs, psc, feats, cid, cluster_name, hrf_prob, t_lbl):
+    """Append one prediction record to the CSV audit log.
+    Never raises — a log failure must never break the prediction UI.
+    """
+    try:
+        model_version, model_file = _get_model_version()
+        now_sgt = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+        row = {
+            "timestamp_sgt"               : now_sgt.strftime("%Y-%m-%d %H:%M:%S"),
+            "model_version"               : model_version,
+            "model_file"                  : model_file,
+            "source"                      : source,
+            "victim_category"             : vc,
+            "age_group"                   : age,
+            "sex"                         : sex,
+            "reporting_source"            : src,
+            "household_size"              : hs,
+            "prior_social_service_contact": psc,
+            "fsi"                         : feats.get("fsi", ""),
+            "igf"                         : feats.get("igf", ""),
+            "gpf"                         : feats.get("gpf", ""),
+            "rss"                         : feats.get("rss", ""),
+            "eri"                         : feats.get("eri", ""),
+            "cluster_id"                  : cid,
+            "cluster_name"                : cluster_name,
+            "risk_score_pct"              : f"{hrf_prob:.4f}",
+            "tier"                        : t_lbl,
+        }
+        write_header = not LOG_PATH.exists() or LOG_PATH.stat().st_size == 0
+        with open(LOG_PATH, "a", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=LOG_COLS)
+            if write_header:
+                writer.writeheader()
+            writer.writerow(row)
+    except Exception:
+        pass  # Never let logging break the UI
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE CONFIG
@@ -507,7 +566,7 @@ with st.sidebar:
 
     st.markdown("**For social workers / FSC staff**")
     user_page = st.radio(
-        "user_nav", ["📋 Case Triage"],
+        "user_nav", ["📋 Case Triage", "📋 Audit Log"],
         label_visibility="collapsed",
         on_change=set_nav_user,
         key="radio_user"
@@ -580,6 +639,9 @@ if active_page == "📋 Case Triage":
                                feats["rss"], feats["eri"], feats["sic"])
             t_lbl, t_col, t_badge = tier(hrf_prob)
             cfg = get_tier_cfg(cid, hrf_prob)
+            # ── Audit log ─────────────────────────────────────────────────────────────────────
+            log_prediction("single", vc, age, sex, src, hs, psc,
+                           feats, cid, cfg["name"], hrf_prob, t_lbl)
 
             st.divider()
 
@@ -681,6 +743,9 @@ if active_page == "📋 Case Triage":
                         "Archetype"      : f"{cfg_['emoji']} {cfg_['name']}",
                         "Urgency"        : cfg_["urgency"],
                     })
+                    # ── Audit log ────────────────────────────────────────────────────
+                    log_prediction("batch", vc_, age_, sex_, src_, hs_, psc_,
+                                   f_, cid_, cfg_["name"], hp, tlbl)
                 except Exception as e:
                     results.append({"Family_ID":r.get("Family_ID","?"),"Tier":"⚠ Error","_prob":0,
                                     "Risk_Score":"—","Archetype":str(e)[:40],"Urgency":"—",
@@ -750,6 +815,57 @@ if active_page == "📋 Case Triage":
 # ─────────────────────────────────────────────────────────────────────────────
 # ══ PROJECT PAGE: Overview Dashboard ════════════════════════════════════════
 # ─────────────────────────────────────────────────────────────────────────────
+# ══ USER PAGE: Audit Log ═════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────────────────
+elif active_page == "📋 Audit Log":
+    st.title("📋 Prediction Audit Log")
+    st.caption(
+        "Every prediction made in this application is automatically logged with a "
+        "Singapore timestamp and model version. Use this log to review past assessments, "
+        "monitor model usage, and support accountability."
+    )
+
+    if LOG_PATH.exists() and LOG_PATH.stat().st_size > 0:
+        log_df = pd.read_csv(LOG_PATH)
+
+        # ── Summary KPIs ──────────────────────────────────────────────────
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Total predictions", len(log_df))
+        m2.metric("Single-case",       (log_df["source"] == "single").sum())
+        m3.metric("Batch",             (log_df["source"] == "batch").sum())
+        m4.metric("Model versions",    log_df["model_version"].nunique())
+
+        # ── Filters ───────────────────────────────────────────────────────
+        col_f1, col_f2, col_f3 = st.columns(3)
+        with col_f1:
+            src_filter  = st.multiselect("Source", ["single", "batch"],
+                                          default=["single", "batch"],
+                                          key="al_src")
+        with col_f2:
+            tier_filter = st.multiselect("Tier", log_df["tier"].unique().tolist(),
+                                          default=log_df["tier"].unique().tolist(),
+                                          key="al_tier")
+        with col_f3:
+            n_rows = st.slider("Rows to display", 10, min(500, len(log_df)), 50,
+                               key="al_rows")
+
+        # ── Filtered table (most recent first) ────────────────────────────
+        filtered = log_df[
+            log_df["source"].isin(src_filter) &
+            log_df["tier"].isin(tier_filter)
+        ].tail(n_rows).iloc[::-1].reset_index(drop=True)
+        st.dataframe(filtered, use_container_width=True, hide_index=True)
+
+        # ── Download ──────────────────────────────────────────────────────
+        st.download_button(
+            "⬇ Download full audit log (CSV)",
+            log_df.to_csv(index=False),
+            file_name=f"msf_audit_log_{datetime.datetime.utcnow().strftime('%Y%m%d')}.csv",
+            mime="text/csv",
+        )
+    else:
+        st.info("No predictions logged yet. Run a case assessment to begin.")
+
 elif active_page == "📊 Overview Dashboard":
     st.title("📊 Overview Dashboard")
     st.caption("Training population snapshot — 2,000 cases, 2021–2024 | MSF DV Trends Report 2025")
@@ -941,4 +1057,5 @@ Run with:  streamlit run app.py
 - Social worker professional judgement must override model output in all cases.
 - Retrain annually as population patterns shift.
 """)
+
 
