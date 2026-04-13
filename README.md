@@ -14,10 +14,8 @@ I built an end-to-end predictive model and application designed for ministry-lev
 - **Deployment:** Packaged the model into a user-friendly application interface for non-technical caseworkers.
 
 ### Key Insights
-* **Feature Importance:** Identified that [Insert Feature, e.g., frequency of past police visits] was the strongest predictor of escalation, overriding traditional socioeconomic indicators.
-* **Model Accuracy:** Achieved an F1-score of [Insert Metric]% in predicting high-risk minority classes, minimizing false negatives (which carry a high human cost).
+* **Feature Importance:** Identified that **Gender Power Imbalance Flag^** was the one of strongest predictor of escalation, overriding traditional socioeconomic indicators. 
+* **Model Accuracy:** Achieved an ROC-AUC of 86% and Recall of 97% in predicting high-risk minority classes, minimizing false negatives (which carry a high human cost).
 
-### How to Run Locally
-1. Clone the repo: `git clone [your-link]`
-2. Install dependencies: `pip install -r requirements.txt`
-3. Launch the app: `python app/triage_app.py`
+### Streamlit Application
+👉[MSF Family Guard](https://triage-predictor.streamlit.app/)
