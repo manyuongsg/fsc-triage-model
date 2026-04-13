@@ -891,6 +891,14 @@ elif active_page == "📊 Overview Dashboard":
     c2.metric("High Risk (HRF=1)", f"{base_df['High_Risk_Flag'].sum():,} ({base_df['High_Risk_Flag'].mean():.1%})")
     c3.metric("Best model",        arts['meta']['hrf_model_name'])
 
+    # ── EDA insight: dataset imbalance ───────────────────────────────────
+    st.info(
+        "⚠️ **Class imbalance:** Only 36.5% of cases are High Risk (HRF = 1). "
+        "A naive model that flags nobody as high-risk would still achieve 63.5% accuracy. "
+        "This is why **SMOTE** was applied to balance the training set and "
+        "**ROC-AUC** was chosen as the primary metric as it is unaffected by class imbalance."
+    )
+
     st.markdown('<div class="sec-hdr">Risk distribution</div>', unsafe_allow_html=True)
     ca,cb = st.columns(2)
     with ca:
@@ -903,6 +911,11 @@ elif active_page == "📊 Overview Dashboard":
         fig1.update_traces(texttemplate="%{text:.1f}%",textposition="outside")
         fig1.update_layout(showlegend=False,coloraxis_showscale=False,height=300,margin=dict(t=40,b=20))
         st.plotly_chart(fig1,use_container_width=True)
+        st.caption(
+            "💡 **Insight:** Elderly VA and Spouse victims carry the highest High Risk rates. "
+            "This disproportionate risk drove the design of the **Gender Power Imbalance Flag**."
+            "Female spousal victims face economic dependence and childcare burdens that make exit structurally harder. "
+        )
     with cb:
         yr = base_df.groupby("Year")["High_Risk_Flag"].agg(["sum","count"]).reset_index()
         yr.columns=["Year","High Risk","Total"]; yr["Rate"]=(yr["High Risk"]/yr["Total"]*100).round(1)
@@ -910,6 +923,24 @@ elif active_page == "📊 Overview Dashboard":
         fig2.update_traces(line_color="#ef4444",marker_size=8)
         fig2.update_layout(height=300,margin=dict(t=40,b=20))
         st.plotly_chart(fig2,use_container_width=True)
+        st.caption(
+            "💡 **Insight:** High Risk rate varies meaningfully across years and it is not a flat line. "
+            "This is why a **temporal train/test split** (train 2021–2023, test 2023–2024) was used "
+            "instead of a random split. A random split would leak future trends into training, "
+            "producing an overly optimistic Acc_Gap and false confidence in generalisation."
+        )
+
+    # ── EDA insight: PSC (computed from data) ────────────────────────────
+    _psc_hrf1 = base_df[base_df["Prior_Social_Service_Contact"]==1]["High_Risk_Flag"].mean()
+    _psc_hrf0 = base_df[base_df["Prior_Social_Service_Contact"]==0]["High_Risk_Flag"].mean()
+    _psc_rate = base_df["Prior_Social_Service_Contact"].mean()
+    st.info(
+        f"📋 **Prior Social Service Contact (PSC) insight:** {_psc_rate:.0%} of cases have prior contact. "
+        f"Families with prior contact have a **{_psc_hrf1:.0%} High Risk rate** — "
+        f"versus only **{_psc_hrf0:.0%}** for first-contact families. "
+        "This 2× differential is why PSC carries **double weight** in the Recidivism Risk Score (RRS) formula: "
+        "RRS = (PSC×2 + FSI + IGF + GPIF) ÷ 5."
+    )
 
     st.markdown('<div class="sec-hdr">The 4 risk archetypes</div>', unsafe_allow_html=True)
     cols = st.columns(4)
@@ -918,6 +949,14 @@ elif active_page == "📊 Overview Dashboard":
             sub = base_df[base_df["Cluster"]==cid]
             cluster_card(cid, n=len(sub), hrf=sub["High_Risk_Flag"].mean())
 
+    st.caption(
+        "💡 **Clustering insight:** Chronic Family Cycle and Ecological Hotspot Child "
+        "have near-identical High Risk rates (~66% vs ~64%) yet require completely opposite interventions. "
+        "Chronic Family Cycle needs **statutory escalation** as prior contact means the system already tried and failed. "
+        "Ecological Hotspot Child needs **immediate first-response** as these families have never been reached before. "
+        "A single risk score cannot distinguish them; the archetype layer is what makes targeted intervention possible."
+    )
+
     st.markdown('<div class="sec-hdr">Abuse type × cluster high-risk heatmap</div>', unsafe_allow_html=True)
     heat = base_df.groupby(["Cluster","Type_of_Abuse"])["High_Risk_Flag"].mean().unstack(fill_value=0).round(3)
     heat.index = [f"C{i}: {CLUSTER_CFG[i]['name']}" for i in heat.index]
@@ -925,6 +964,14 @@ elif active_page == "📊 Overview Dashboard":
                      title="High Risk rate by cluster × abuse type",aspect="auto")
     fig3.update_layout(height=280,margin=dict(t=40,b=20))
     st.plotly_chart(fig3,use_container_width=True)
+    st.caption(
+        "💡 **Heatmap insight:** Sexual Abuse and Neglect carry consistently high risk "
+        "across all clusters but Physical Abuse risk varies widely by archetype. "
+        "This confirms that **abuse type alone is insufficient for triage**: "
+        "the same Physical Abuse case has very different risk depending on whether the family "
+        "has prior contact, child victims, or financial stress. "
+        "This interaction is exactly what the engineered features (ERI, RRS, IGF) are designed to capture."
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
