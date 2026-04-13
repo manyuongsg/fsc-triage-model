@@ -28,6 +28,7 @@ from plotly.subplots import make_subplots
 from pathlib import Path
 import datetime
 import csv
+import math
 
 warnings.filterwarnings("ignore")
 
@@ -599,7 +600,7 @@ with st.sidebar:
     )
     st.divider()
     st.caption(f"Best model: {arts['meta']['hrf_model_name']}")
-    st.caption("K-Means k=4 · 80/20 temporal split")
+    st.caption("K-Means k=4 · 70/30 temporal split")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ROUTING — detect which radio was changed
@@ -852,7 +853,7 @@ elif active_page == "📋 Audit Log":
         m4.metric("Model versions",    log_df["model_version"].nunique())
 
         # ── Filters ───────────────────────────────────────────────────────
-        col_f1, col_f2, col_f3 = st.columns(3)
+        col_f1, col_f2 = st.columns(2)
         with col_f1:
             src_filter  = st.multiselect("Source", ["single", "batch"],
                                           default=["single", "batch"],
@@ -861,16 +862,35 @@ elif active_page == "📋 Audit Log":
             tier_filter = st.multiselect("Tier", log_df["tier"].unique().tolist(),
                                           default=log_df["tier"].unique().tolist(),
                                           key="al_tier")
-        with col_f3:
-            n_rows = st.slider("Rows to display", 10, min(500, len(log_df)), 50,
-                               key="al_rows")
 
-        # ── Filtered table (most recent first) ────────────────────────────
+        # ── Filtered table (most recent first, paginated) ─────────────────
+        PAGE_SIZE = 50
         filtered = log_df[
             log_df["source"].isin(src_filter) &
             log_df["tier"].isin(tier_filter)
-        ].tail(n_rows).iloc[::-1].reset_index(drop=True)
-        st.dataframe(filtered, use_container_width=True, hide_index=True)
+        ].iloc[::-1].reset_index(drop=True)
+
+        total_rows  = len(filtered)
+        total_pages = max(1, math.ceil(total_rows / PAGE_SIZE))
+
+        if total_pages > 1:
+            pg_col, info_col = st.columns([1, 2])
+            with pg_col:
+                page = st.number_input(
+                    "Page", min_value=1, max_value=total_pages,
+                    value=1, step=1, key="al_page"
+                )
+            with info_col:
+                st.caption(
+                    f"Showing {PAGE_SIZE} rows per page · "
+                    f"{total_rows:,} total rows · page {page} of {total_pages}"
+                )
+        else:
+            page = 1
+
+        start = (page - 1) * PAGE_SIZE
+        st.dataframe(filtered.iloc[start : start + PAGE_SIZE],
+                     use_container_width=True, hide_index=True)
 
         # ── Download ──────────────────────────────────────────────────────
         st.download_button(
