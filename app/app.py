@@ -140,21 +140,24 @@ div[data-testid="stTabs"] button[data-baseweb="tab"]{font-size:15px;font-weight:
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
 CLUSTER_CFG = {
+    # ── C0: Chronic Spousal Cycle ────────────────────────────────────────────
+    # Actual data: PSC=100%, all Spouse, HRF=8%, Recidivism=0.65, ERI=0.66
+    # 100% prior contact — chronic repeat pattern known to MSF but not yet statutory.
     0: dict(
-        name="Silent Pressure Cooker", emoji="🫧", color="#f59e0b", css="c0",
-        profile="No financial stress, Spouse + VA victims, latent risk. Families are not reaching services despite underlying vulnerability.",
-        signal="Low ecological risk. Danger is hidden — under-reporting is common.",
-        who="Community Development Councils, RCs, FSC outreach workers",
+        name="Chronic Spousal Cycle", emoji="🔄", color="#f59e0b", css="c0",
+        profile="100% prior social service contact, all Spouse victims, chronic repeat pattern. High ERI (0.66) and Recidivism (0.65) but below statutory threshold. Women remain due to financial dependency — risk is accumulating.",
+        signal="Chronic repeat pattern. 100% prior contact means the system has been here before — intervention has not broken the cycle yet.",
+        who="PSC Protection Officers, PAVE, TRANS-SAFE Centre, PPO unit, FSC long-term caseworkers",
         tiers={
             "critical": dict(
                 badge="b-red", badge_txt="CRITICAL",
                 urgency="CRITICAL — assess within 24 hours",
                 interventions=[
-                    ("Immediate home visit",    "Dispatch outreach worker for same-day safety assessment — do not delay despite no prior contact",         "b-red"),
-                    ("Emergency safety plan",   "Document safe word, emergency contacts, and evacuation plan with victim",                                  "b-red"),
+                    ("Immediate home visit",    "Dispatch outreach worker for same-day safety assessment — do not delay despite low prior contact",         "b-red"),
+                    ("Emergency safety plan",   "Document safe word, emergency contacts, and evacuation plan with victim on first visit",                   "b-red"),
                     ("PPO/MPO application",     "Assist victim to file for Personal Protection Order or Mandatory Counselling Order immediately",           "b-amber"),
                     ("Crisis service referral", "Refer to PAVE or TRANS-SAFE Centre crisis line; link to ComCare emergency assistance",                    "b-purple"),
-                    ("VA protective check",     "Arrange same-day welfare check for any elderly/disabled household members",                                "b-blue"),
+                    ("Case registration",       "Register with FSC immediately — establish the ongoing relationship this family has never had",             "b-blue"),
                 ],
             ),
             "elevated": dict(
@@ -162,7 +165,7 @@ CLUSTER_CFG = {
                 urgency="Priority — act within 1 week",
                 interventions=[
                     ("Priority home visit",     "Schedule home visit within 5 working days; conduct structured safety screening",                          "b-amber"),
-                    ("Financial safety net",    "Link to ComCare, Workfare, utility assistance to reduce dependency vulnerability",                         "b-green"),
+                    ("Financial safety net",    "Link to ComCare, Workfare, utility assistance to reduce economic dependency vulnerability",                "b-green"),
                     ("PPO awareness",           "Ensure victim knows legal rights under Women's Charter and how to apply for PPO",                          "b-purple"),
                     ("Service warm handoff",    "Facilitate direct referral to FSC counsellor — do not leave with a leaflet only",                         "b-blue"),
                 ],
@@ -171,57 +174,66 @@ CLUSTER_CFG = {
                 badge="b-green", badge_txt="Preventive",
                 urgency="Preventive — act within 2–4 weeks",
                 interventions=[
-                    ("Grassroots outreach",     "Engage through CCs and RCs to build trust before crisis escalates",                                       "b-blue"),
+                    ("Grassroots outreach",     "Engage through CCs and RCs to build trust — this family has never engaged services before",               "b-blue"),
                     ("Financial screening",     "Link to ComCare, Workfare, utility assistance",                                                            "b-green"),
-                    ("VA welfare checks",       "Schedule routine home visits for elderly/disabled household members",                                      "b-amber"),
                     ("PPO awareness",           "Ensure female spouses know their legal rights under the Women's Charter",                                  "b-purple"),
+                    ("GP sensitisation",        "Alert family GP to screen for family violence indicators at routine visits",                               "b-grey"),
                 ],
             ),
         },
     ),
+    # ── C1: Silent Pressure Cooker ───────────────────────────────────────────
+    # Actual data: PSC=0%, all Spouse, HRF=5%, Recidivism=0.24, ERI=0.42
+    # Zero prior contact — these families have NEVER reached services.
+    # Lowest HRF and Recidivism — risk is latent, not yet surfaced.
     1: dict(
-        name="Ecological Hotspot Child", emoji="🏘️", color="#ef4444", css="c1",
-        profile="Financial stress, zero prior contact, all child victims, high community incidence. Risk is environmental — these families are undetected.",
-        signal="First contact is the critical intervention window.",
-        who="School counsellors, Allied Educators, MOE-FSC liaisons, KidSTART",
+        name="Silent Pressure Cooker", emoji="🫧", color="#ef4444", css="c1",
+        profile="Zero prior social service contact, all Spouse victims, lowest HRF (5%) and Recidivism (0.24). Risk is hidden — these families have never reached services. Danger accumulates silently beneath the surface.",
+        signal="No prior contact means no early warning system. This is a first-contact window — engage before crisis escalates.",
+        who="Community Development Councils, RCs, GP clinics, FSC outreach workers, polyclinics",
         tiers={
             "critical": dict(
                 badge="b-red", badge_txt="CRITICAL",
                 urgency="CRITICAL — statutory response same day",
                 interventions=[
                     ("CYPA mandatory report",   "File immediate report under Children and Young Persons Act — do not wait for confirmation",                "b-red"),
-                    ("MSF PSV referral",        "Escalate to MSF Child Protective Service for urgent investigation and safety determination",                "b-red"),
-                    ("Emergency placement",     "Assess suitability of temporary foster or kinship care if home environment is unsafe",                     "b-red"),
-                    ("School immediate alert",  "Notify school principal and AED; increase daily welfare checks and document observations",                 "b-amber"),
-                    ("Multi-agency meeting",    "Convene Child Protection Conference within 72 hours with school, MSF, and medical if applicable",          "b-purple"),
+                    ("MSF CPS referral",        "Escalate to MSF Child Protective Service for urgent investigation and safety determination",               "b-red"),
+                    ("Emergency placement",     "Assess suitability of temporary foster or kinship care if home environment is unsafe",                    "b-red"),
+                    ("School immediate alert",  "Notify school principal and AED; increase daily welfare checks and document all observations",            "b-amber"),
+                    ("Multi-agency meeting",    "Convene Child Protection Conference within 72 hours with school, MSF, and medical if applicable",         "b-purple"),
                 ],
             ),
             "elevated": dict(
                 badge="b-red", badge_txt="High Alert",
                 urgency="High alert — triage within 48 hours",
                 interventions=[
-                    ("School monitoring",       "Equip AEDs and counsellors to detect unexplained injuries and absenteeism",                                "b-red"),
-                    ("Childcare alerts",        "Train childcare centre staff on physical abuse indicators for 0–6 year olds",                              "b-red"),
-                    ("Priority casework",       "Assign dedicated caseworker; schedule home visit within 48 hours",                                         "b-amber"),
-                    ("Reporter training",       "Refresh CYPA mandatory reporting obligations for teachers and GPs",                                        "b-blue"),
+                    ("School monitoring",       "Equip AEDs and counsellors to detect unexplained injuries and absenteeism — first-contact family",        "b-red"),
+                    ("Childcare alerts",        "Train childcare centre staff on physical abuse indicators for 0–6 year olds",                             "b-red"),
+                    ("Priority casework",       "Assign dedicated caseworker; schedule home visit within 48 hours — this is the critical window",          "b-amber"),
+                    ("Reporter training",       "Refresh CYPA mandatory reporting obligations for teachers and GPs in high-incidence estates",              "b-blue"),
                 ],
             ),
             "routine": dict(
                 badge="b-amber", badge_txt="Monitor",
                 urgency="Monitor — act within 2 weeks",
                 interventions=[
-                    ("School monitoring",       "Equip AEDs and counsellors to detect unexplained injuries and absenteeism",                                "b-amber"),
-                    ("Estate campaign",         "Parenting workshops and KidSTART in high-incidence community estates",                                     "b-blue"),
-                    ("Reporter training",       "Refresh CYPA mandatory reporting obligations for teachers and GPs",                                        "b-blue"),
+                    ("School monitoring",       "Equip AEDs and counsellors to detect unexplained injuries and absenteeism",                               "b-amber"),
+                    ("Estate campaign",         "Parenting workshops and KidSTART in high-incidence community estates",                                    "b-blue"),
+                    ("Reporter training",       "Refresh CYPA mandatory reporting obligations for teachers and GPs",                                       "b-blue"),
+                    ("Hotspot mapping",         "Flag estate in community risk register; increase proactive outreach frequency in district",                "b-grey"),
                 ],
             ),
         },
     ),
+    # ── C2: Chronic Family Cycle ─────────────────────────────────────────────
+    # Actual data: PSC=100%, all Child, HRF=66%, Recidivism=0.73, FSI=0.63
+    # Highest HRF and Recidivism — most urgent cluster.
+    # 100% prior contact — prior intervention has NOT broken the cycle.
     2: dict(
-        name="Chronic Spousal Cycle", emoji="🔄", color="#8b5cf6", css="c2",
-        profile="Financial stress, 38% prior contact, mostly female spouses. Lower severity but recurring — patterns repeat across years.",
-        signal="Recidivism risk 0.44. Women stay due to financial dependency or fear.",
-        who="PSC Protection Officers, PAVE, TRANS-SAFE Centre, PPO unit",
+        name="Chronic Family Cycle", emoji="🔁", color="#8b5cf6", css="c2",
+        profile="100% prior social service contact, all Child victims, highest HRF (66%) and Recidivism (0.73). Financial stress is high (FSI=0.63). Past intervention has not resolved the root cause — violence is entrenched and intergenerational.",
+        signal="Prior intervention failed. Highest HRF rate across all clusters. Statutory escalation is likely required — community management has already been attempted.",
+        who="MSF Child Protective Service, CPSCs, Foster Care caseworkers, School DSAs, MSF PSV",
         tiers={
             "critical": dict(
                 badge="b-red", badge_txt="CRITICAL",
@@ -238,35 +250,39 @@ CLUSTER_CFG = {
                 badge="b-purple", badge_txt="Priority",
                 urgency="Priority — structured follow-up within 1 week",
                 interventions=[
-                    ("Dedicated caseworker",    "Assign dedicated case worker — minimum 12-month engagement plan",                                          "b-purple"),
+                    ("Dedicated caseworker",    "Assign dedicated case worker — minimum 12-month engagement plan given chronic repeat pattern",             "b-purple"),
                     ("DVERT referral",          "Fast-track to Domestic Violence Emergency Response Team for police cases",                                  "b-red"),
                     ("Safety planning",         "Ensure victim has PPO, safe word, and emergency contacts documented",                                       "b-amber"),
-                    ("Financial independence",  "Connect to WSG employment support, skills training, childcare subsidies",                                   "b-green"),
+                    ("Financial independence",  "Connect to WSG employment support, skills training, childcare subsidies to reduce dependency",             "b-green"),
                 ],
             ),
             "routine": dict(
                 badge="b-purple", badge_txt="Chronic",
-                urgency="Moderate — structured follow-up within 1 week",
+                urgency="Chronic management — structured follow-up within 2 weeks",
                 interventions=[
                     ("Long-term counselling",   "Assign dedicated case worker — minimum 12-month engagement plan",                                          "b-purple"),
                     ("Financial independence",  "Connect to WSG employment support, skills training, childcare subsidies",                                   "b-green"),
                     ("Safety planning",         "Ensure victim has PPO, safe word, and emergency contacts documented",                                       "b-amber"),
-                    ("Perpetrator programme",   "Mandatory Counselling Order assessment for repeat incidents",                                               "b-blue"),
+                    ("Perpetrator programme",   "Mandatory Counselling Order assessment for repeat incidents; anger management referral",                    "b-blue"),
                 ],
             ),
         },
     ),
+    # ── C3: Ecological Hotspot Child ────────────────────────────────────────
+    # Actual data: PSC≈0%, all Child, HRF=64%, Recidivism=0.16, ERI=0.42
+    # Almost no prior contact — these families are UNDETECTED.
+    # High HRF despite no history — risk is driven by environment, not case history.
     3: dict(
-        name="Chronic Family Cycle", emoji="🔁", color="#ec4899", css="c3",
-        profile="100% prior contact, 100% financial stress, 100% intergenerational risk, all child victims. Highest recidivism (0.87). Past intervention did not resolve the root cause.",
-        signal="Violence is entrenched across generations.",
-        who="MSF PSV, CPSCs, Foster Care caseworkers, School DSAs",
+        name="Ecological Hotspot Child", emoji="🏘️", color="#ec4899", css="c3",
+        profile="Almost zero prior social service contact (≈9%), all Child victims, high HRF (64%) despite no case history. Financial stress is high (FSI=0.60). Risk is environmental — these families are undetected. First contact is the critical intervention window.",
+        signal="High risk, no prior contact. Risk is driven by community environment (high CIR), not accumulated case history. The 48-hour window after first detection is critical.",
+        who="School counsellors, Allied Educators, MOE-FSC liaisons, KidSTART, childcare centres",
         tiers={
             "critical": dict(
                 badge="b-red", badge_txt="CRITICAL",
                 urgency="CRITICAL — escalate within 24 hours",
                 interventions=[
-                    ("Statutory review",        "Escalate immediately to MSF PSV for CYPA investigation — prior intervention has not resolved root cause",  "b-red"),
+                    ("Statutory review",        "Escalate immediately to MSF Child Protective Service for CYPA investigation — prior intervention has not resolved root cause",  "b-red"),
                     ("Emergency placement",     "Initiate foster/kinship care placement assessment if home remains unsafe for children",                     "b-red"),
                     ("Multi-agency crisis",     "Convene Child Protection Conference within 24 hours; include school, medical, police, and FSC",             "b-red"),
                     ("School welfare alert",    "Flag all children in household for immediate daily welfare checks; report any injuries same day",           "b-amber"),
@@ -277,10 +293,10 @@ CLUSTER_CFG = {
                 badge="b-red", badge_txt="URGENT",
                 urgency="URGENT — escalate within 24 hours",
                 interventions=[
-                    ("Statutory review",        "Escalate to MSF PSV for CYPA investigation and consider supervision order",                                "b-red"),
-                    ("Out-of-home assessment",  "Evaluate foster/kinship care placement if home remains unsafe",                                             "b-red"),
+                    ("Statutory review",        "Escalate to MSF Child Protective Service for CYPA investigation and consider supervision order",           "b-red"),
+                    ("Out-of-home assessment",  "Evaluate foster/kinship care placement — prior contact means community management has been tried",         "b-red"),
                     ("Intensive therapy",       "Multisystemic Therapy (MST) or Family Preservation Services",                                              "b-amber"),
-                    ("School welfare check",    "Weekly welfare checks via school; flag absenteeism immediately",                                            "b-purple"),
+                    ("School welfare check",    "Weekly welfare checks via school; flag absenteeism and unexplained injuries immediately",                  "b-purple"),
                 ],
             ),
             "routine": dict(
@@ -288,7 +304,7 @@ CLUSTER_CFG = {
                 urgency="Priority — structured engagement within 1 week",
                 interventions=[
                     ("Intensive therapy",       "Multisystemic Therapy (MST) or Family Preservation Services",                                              "b-amber"),
-                    ("Parenting programme",     "Triple P or Circle of Security — mandatory if case stays at home",                                         "b-blue"),
+                    ("Parenting programme",     "Triple P or Circle of Security — mandatory if case remains in the home",                                   "b-blue"),
                     ("School welfare check",    "Weekly welfare checks via school; flag absenteeism immediately",                                            "b-purple"),
                     ("Case conference",         "Quarterly multi-agency case conference to review progress and escalation triggers",                         "b-grey"),
                 ],
@@ -1001,17 +1017,29 @@ elif active_page == "📚 How the Model Works":
 | 2 — High Risk | 5 classifiers compared | *Is this family Tier 2 high risk?* |
 
 Layer 1 and Layer 2 are **independent** — the cluster label is not passed as a feature to the classifier. K-Means is fitted on the training split only to prevent centroid leakage into evaluation.
+
+### The 4 risk archetypes
+
+| Cluster | Archetype | Defining signal | Recommended intervention |
+|---------|-----------|-----------------|--------------------------|
+| C0 | Chronic Spousal Cycle | 100% prior contact, Spouse victims, chronic repeat pattern, high ERI (0.66), HRF=8%, Recidivism=0.65 | Long-term: DVERT, mandatory counselling, financial independence support |
+| C1 | Silent Pressure Cooker | 0% prior contact, Spouse victims, lowest HRF (5%) and Recidivism (0.24) — latent risk not yet surfaced | Preventive: grassroots outreach, PPO awareness, proactive GP screening |
+| C2 | Chronic Family Cycle | 100% prior contact, Child victims, highest HRF (66%) and Recidivism (0.73) — prior intervention has not broken the cycle | Urgent: CYPA escalation, intensive family therapy, out-of-home care assessment |
+| C3 | Ecological Hotspot Child | ≈0% prior contact, Child victims, high HRF (64%) despite no history — first contact is the critical window | High alert: school monitoring, childcare alerts, estate-level campaigns — respond within 48 hours |
+
+> **Layer 1 and Layer 2 are fully independent.** K-Means was fitted on training rows only to prevent centroid leakage.
 """)
 
     st.markdown("### Feature engineering (all derived inside the notebook)")
     st.markdown("""
-| Feature | Derived from | Formula |
-|---------|-------------|---------|
-| `Financial_Stress_Index` | CIR + Victim_Category + PSC + HH | 1 if CIR ≥ 1.65 or (Spouse + PSC=1 + HH≥4) |
-| `Intergenerational_Risk_Flag` | Victim_Category + PSC + FSI | 1 if Child AND PSC=1 AND FSI=1 |
-| `Gender_Power_Imbalance_Flag` | Victim_Category + Sex + Severity | 1 if (Female Spouse + sev≥3) or Female Elderly VA |
-| `Recidivism_Risk_Score` | PSC + FSI + IGF + HH | (PSC×2 + FSI + IGF + [HH≥5]) ÷ 5 |
-| `Ecological_Risk_Index` | Type_of_Abuse + HH + CIR + FSI + PSC | Bronfenbrenner 4-level weighted composite |
+| Feature | Derived from | Formula / logic |
+|---------|-------------|-----------------|
+| `Financial_Stress_Index` (FSI) | CIR + Reporting_Source + HH | Continuous 0–1: 50% CIR + 30% reporting escalation + 20% household density |
+| `Intergenerational_Risk_Flag` (IGF) | Victim_Category + PSC + HH | 1 if **Child** AND PSC=1 AND HH≥3 |
+| `Gender_Power_Imbalance_Flag` (GPIF) | Victim_Category + Sex | 1 if Female AND Victim_Category=Spouse |
+| `Recidivism_Risk_Score` (RRS) | PSC + FSI + IGF + GPIF | (PSC×2 + FSI + IGF + GPIF) ÷ 5 |
+| `Ecological_Risk_Index` (ERI) | PSC + CIR + HH + Reporting_Source | Bronfenbrenner 5-layer composite: PSC 25% + CIR 25% + HH 20% + Mesosystem 20% + escalation 10% |
+| `Stress_Isolation_Cross` | FSI × Mesosystem_Isolation | Interaction term — financial stress × social isolation (Exchange/Social Control Theory) |
 """)
 
     st.markdown("### Train/Test accuracy gap — how to read the results")
