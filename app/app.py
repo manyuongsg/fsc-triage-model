@@ -1,5 +1,5 @@
 """
-MSF FamilyGuard — Predictive Triage & Intervention System
+FamilyGuard — Predictive Triage & Intervention System
 ==========================================
 TWO distinct user areas:
 
@@ -101,7 +101,7 @@ def log_prediction(source, vc, age, sex, src, hs, psc, feats, cid, cluster_name,
 # PAGE CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="MSF FamilyGuard",
+    page_title="FamilyGuard",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -577,7 +577,7 @@ if "last_group" not in st.session_state:
     st.session_state.radio_proj = None
 
 with st.sidebar:
-    st.markdown("## 🛡️ MSF FamilyGuard")
+    st.markdown("## 🛡️ FamilyGuard")
     st.caption("Family Violence Predictive Triage System")
     st.divider()
 
