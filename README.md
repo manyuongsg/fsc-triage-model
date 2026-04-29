@@ -10,7 +10,7 @@ I built an end-to-end predictive model and application designed for ministry-lev
 
 ### Technical Methodology
 - **Data Privacy:** Handled highly sensitive case data with strict anonymization protocols. *(Note: Raw data is excluded from this repository to protect PII. Synthetic data is provided for code execution).*
-- **Modeling:** Evaluated multiple classification algorithms, ultimately selecting **Random Forest** and **kNN** for their ability to handle non-linear relationships and provide interpretable feature importance for social workers.
+- **Modeling:** Evaluated multiple classification algorithms, ultimately selecting **Logistics Regression** for its zero train-test discrepancy, prioritising generalisation to new families over marginal accuracy gains. A deliberate trade-off when real families are at stake.
 - **Deployment:** Packaged the model into a user-friendly application interface for non-technical caseworkers.
 
 ### Key Insights
