@@ -59,4 +59,3 @@ The combination is the offer: engineering discipline for debugging complex syste
 GitHub: [manyuongsg](https://github.com/manyuongsg)
 
 ---
-*Drafted from real project files. Review before promoting to `projects/fsc-triage-model/README.md`.*
